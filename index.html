@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NMR Well Log Analyzer</title>
+  <style>
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; }
+.nmr-root {
+  min-height: 100vh;
+  background: #0a0e1a;
+  color: #e8eaf0;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+.nmr-nav {
+  position: sticky; top: 0; z-index: 100;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2.5rem; height: 60px;
+  background: rgba(10,14,26,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(99,179,237,0.15);
+}
+.nmr-nav-logo { font-size: 1rem; font-weight: 600; letter-spacing: 0.04em; color: #63b3ed; }
+.nmr-nav-links { display: flex; align-items: center; gap: 0.5rem; }
+.nmr-nav-link {
+  background: transparent; border: none; color: #718096;
+  font-size: 0.875rem; font-weight: 500; cursor: pointer;
+  padding: 0.4rem 0.85rem; border-radius: 6px; transition: color 0.2s; text-decoration: none;
+}
+.nmr-nav-link:hover { color: #e2e8f0; }
+.nmr-nav-btn {
+  background: #2b6cb0; color: #fff; border: none; border-radius: 6px;
+  padding: 0.45rem 1.2rem; font-size: 0.875rem; font-weight: 600;
+  cursor: pointer; transition: background 0.2s; text-decoration: none;
+}
+.nmr-nav-btn:hover { background: #3182ce; }
+.nmr-hero {
+  position: relative; text-align: center; padding: 7rem 2rem 5rem;
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(49,130,206,0.18) 0%, transparent 70%),
+              linear-gradient(180deg, #0a0e1a 0%, #0d1220 100%);
+  overflow: hidden;
+}
+.nmr-hero::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(circle, rgba(99,179,237,0.06) 1px, transparent 1px);
+  background-size: 40px 40px; pointer-events: none;
+}
+.nmr-hero-badge {
+  display: inline-block; margin-bottom: 1.5rem; padding: 0.3rem 1rem;
+  border-radius: 99px; background: rgba(49,130,206,0.15);
+  border: 1px solid rgba(99,179,237,0.3); font-size: 0.75rem; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase; color: #63b3ed;
+}
+.nmr-title {
+  font-size: clamp(2.4rem, 6vw, 4rem); font-weight: 800; letter-spacing: -0.02em;
+  line-height: 1.1; margin: 0 0 1.25rem;
+  background: linear-gradient(135deg, #fff 30%, #63b3ed 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+}
+.nmr-subtitle {
+  max-width: 580px; margin: 0 auto; font-size: clamp(1rem, 2.5vw, 1.2rem);
+  line-height: 1.65; color: #a0aec0;
+}
+.nmr-hero-divider {
+  width: 60px; height: 3px; background: linear-gradient(90deg, #3182ce, #63b3ed);
+  border-radius: 2px; margin: 2.5rem auto 0;
+}
+.nmr-section { padding: 5rem 2rem; }
+.nmr-container { max-width: 1100px; margin: 0 auto; }
+.nmr-section-label {
+  font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em;
+  text-transform: uppercase; color: #3182ce; margin-bottom: 0.6rem;
+}
+.nmr-section-title {
+  font-size: clamp(1.6rem, 3.5vw, 2.25rem); font-weight: 700;
+  color: #e8eaf0; margin: 0 0 2.5rem; letter-spacing: -0.01em;
+}
+.nmr-about {
+  background: #0d1220; border-top: 1px solid rgba(99,179,237,0.08);
+  border-bottom: 1px solid rgba(99,179,237,0.08); text-align: center;
+}
+.nmr-about-text {
+  font-size: 1.1rem; line-height: 1.8; color: #a0aec0;
+  max-width: 720px; text-align: center; margin: 0 auto;
+}
+.nmr-outputs { background: #0a0e1a; text-align: center; }
+.nmr-outputs-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 1.25rem;
+}
+.nmr-output-card {
+  background: #111827; border: 1px solid rgba(99,179,237,0.12); border-radius: 12px;
+  padding: 1.75rem 1.5rem; transition: border-color 0.2s, transform 0.2s;
+}
+.nmr-output-card:hover { border-color: rgba(99,179,237,0.4); transform: translateY(-3px); }
+.nmr-output-symbol {
+  font-size: 1.75rem; font-weight: 700; color: #63b3ed;
+  font-family: 'Georgia', serif; margin-bottom: 0.5rem;
+}
+.nmr-output-name { font-size: 0.9rem; font-weight: 600; color: #e8eaf0; margin-bottom: 0.4rem; }
+.nmr-output-desc { font-size: 0.8rem; color: #718096; line-height: 1.5; }
+.nmr-howitworks {
+  text-align: center;
+  background: linear-gradient(180deg, #0d1220 0%, #0a0e1a 100%);
+  border-top: 1px solid rgba(99,179,237,0.08); border-bottom: 1px solid rgba(99,179,237,0.08);
+}
+.nmr-steps {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1.5rem;
+}
+.nmr-step {
+  background: #0d1b33; border: 1px solid rgba(49,130,206,0.25); border-radius: 14px;
+  padding: 2rem 1.75rem; display: flex; flex-direction: column; align-items: center;
+  text-align: center; gap: 1rem; position: relative; overflow: hidden;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.nmr-step::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg, #2b6cb0, #63b3ed);
+}
+.nmr-step:hover { border-color: rgba(99,179,237,0.5); box-shadow: 0 0 24px rgba(49,130,206,0.2); }
+.nmr-step-number {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: linear-gradient(135deg, #2b6cb0, #63b3ed);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.25rem; font-weight: 800; color: #fff; flex-shrink: 0;
+}
+.nmr-step-text { font-size: 1rem; font-weight: 600; color: #e8eaf0; line-height: 1.45; }
+.nmr-cta {
+  background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(49,130,206,0.12) 0%, transparent 70%), #0d1220;
+  border-top: 1px solid rgba(99,179,237,0.1); text-align: center;
+}
+.nmr-cta-title {
+  font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800;
+  letter-spacing: -0.02em; color: #e8eaf0; margin: 0 0 1rem;
+}
+.nmr-cta-sub { font-size: 1.05rem; color: #718096; margin: 0 0 2.5rem; }
+.nmr-cta-btn {
+  display: inline-block; background: linear-gradient(135deg, #2b6cb0, #3182ce);
+  color: #fff; border: none; border-radius: 10px; padding: 1rem 3rem;
+  font-size: 1.15rem; font-weight: 700; letter-spacing: 0.02em; cursor: pointer;
+  box-shadow: 0 4px 24px rgba(49,130,206,0.4);
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s; text-decoration: none;
+}
+.nmr-cta-btn:hover {
+  background: linear-gradient(135deg, #3182ce, #4299e1); transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(49,130,206,0.55);
+}
+.nmr-cta-btn:active { transform: translateY(0); }
+.nmr-footer {
+  padding: 1.75rem 2rem; border-top: 1px solid rgba(99,179,237,0.08);
+  background: #0a0e1a; text-align: center; font-size: 0.8rem; color: #4a5568;
+}
+.nmr-footer-credit { margin-top: 0.5rem; font-size: 0.75rem; color: #2d3748; }
+  </style>
+</head>
+<body>
+<div class="nmr-root">
+  <nav class="nmr-nav">
+    <span class="nmr-nav-logo">NMR Analyzer</span>
+    <div class="nmr-nav-links">
+      <a class="nmr-nav-link" href="about.html">About NMR</a>
+      <a class="nmr-nav-btn" href="analysis.html">Start Analysis</a>
+    </div>
+  </nav>
+
+  <header class="nmr-hero">
+    <div class="nmr-hero-badge">Nuclear Magnetic Resonance</div>
+    <h1 class="nmr-title">NMR Well Log Analyzer</h1>
+    <p class="nmr-subtitle">Extracting reservoir properties from NMR well log data</p>
+    <div class="nmr-hero-divider"></div>
+  </header>
+
+  <section class="nmr-section nmr-about">
+    <div class="nmr-container">
+      <div class="nmr-section-label">About</div>
+      <h2 class="nmr-section-title">What Is This Tool?</h2>
+      <p class="nmr-about-text">
+        This tool simulates Nuclear Magnetic Resonance (NMR) log interpretation by converting
+        T&#x2082; relaxation data into key reservoir properties using simplified engineering equations.
+      </p>
+    </div>
+  </section>
+
+  <section class="nmr-section nmr-outputs">
+    <div class="nmr-container">
+      <div class="nmr-section-label">Outputs</div>
+      <h2 class="nmr-section-title">What the Tool Calculates</h2>
+      <div class="nmr-outputs-grid">
+        <div class="nmr-output-card">
+          <div class="nmr-output-symbol">&#x3c6;</div>
+          <div class="nmr-output-name">Porosity</div>
+          <div class="nmr-output-desc">Total pore volume fraction of the rock</div>
+        </div>
+        <div class="nmr-output-card">
+          <div class="nmr-output-symbol">FFI</div>
+          <div class="nmr-output-name">Free Fluid Index</div>
+          <div class="nmr-output-desc">Fraction of fluid that can flow under gravity</div>
+        </div>
+        <div class="nmr-output-card">
+          <div class="nmr-output-symbol">BFV</div>
+          <div class="nmr-output-name">Bound Fluid Volume</div>
+          <div class="nmr-output-desc">Fluid held by capillary forces, immovable</div>
+        </div>
+        <div class="nmr-output-card">
+          <div class="nmr-output-symbol">k</div>
+          <div class="nmr-output-name">Permeability</div>
+          <div class="nmr-output-desc">Ability of rock to transmit fluid flow</div>
+        </div>
+        <div class="nmr-output-card">
+          <div class="nmr-output-symbol">RQI</div>
+          <div class="nmr-output-name">Reservoir Quality Index</div>
+          <div class="nmr-output-desc">Combined indicator of reservoir quality</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="nmr-section nmr-howitworks">
+    <div class="nmr-container">
+      <div class="nmr-section-label">Workflow</div>
+      <h2 class="nmr-section-title">How the Analysis Works</h2>
+      <div class="nmr-steps">
+        <div class="nmr-step">
+          <div class="nmr-step-number">1</div>
+          <div class="nmr-step-text">Import NMR T&#x2082; Distribution Data</div>
+        </div>
+        <div class="nmr-step">
+          <div class="nmr-step-number">2</div>
+          <div class="nmr-step-text">Analyze Signal Using NMR Principles</div>
+        </div>
+        <div class="nmr-step">
+          <div class="nmr-step-number">3</div>
+          <div class="nmr-step-text">Compute Reservoir Properties (&#x3c6;, FFI, BFV, k)</div>
+        </div>
+        <div class="nmr-step">
+          <div class="nmr-step-number">4</div>
+          <div class="nmr-step-text">Visualize Results and Interpret Reservoir Behavior</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="nmr-section nmr-cta">
+    <div class="nmr-container">
+      <h2 class="nmr-cta-title">Ready to Analyze Your Well Log?</h2>
+      <p class="nmr-cta-sub">Upload your T&#x2082; data and get quantitative reservoir properties in seconds.</p>
+      <a class="nmr-cta-btn" href="analysis.html">Start Analysis</a>
+    </div>
+  </section>
+
+  <footer class="nmr-footer">
+    <div class="nmr-container">
+      <span>NMR Well Log Analyzer</span>
+      <div class="nmr-footer-credit">
+        Department of Chemical and Petroleum Engineering &mdash; Sultan Qaboos University
+      </div>
+    </div>
+  </footer>
+</div>
+</body>
+</html>

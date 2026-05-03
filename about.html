@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>About NMR &mdash; NMR Well Log Analyzer</title>
+  <style>
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; }
+.ab-root {
+  min-height: 100vh; background: #0a0e1a; color: #c9d1e0;
+  font-family: 'Inter', system-ui, sans-serif; display: flex; flex-direction: column;
+}
+.ab-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2.5rem; height: 60px; background: rgba(10,14,26,0.92);
+  border-bottom: 1px solid rgba(99,179,237,0.1);
+  position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px);
+}
+.ab-nav-logo {
+  font-size: 1.05rem; font-weight: 700; color: #63b3ed;
+  letter-spacing: 0.01em; cursor: pointer; text-decoration: none;
+}
+.ab-nav-links { display: flex; align-items: center; gap: 0.5rem; }
+.ab-nav-link {
+  background: transparent; border: none; color: #718096; font-size: 0.875rem;
+  font-weight: 500; cursor: pointer; padding: 0.4rem 0.85rem; border-radius: 6px;
+  transition: color 0.2s; text-decoration: none;
+}
+.ab-nav-link:hover { color: #e2e8f0; }
+.ab-nav-active { color: #63b3ed !important; }
+.ab-nav-btn {
+  background: linear-gradient(135deg, #2b6cb0, #3182ce); color: #fff; border: none;
+  border-radius: 8px; padding: 0.45rem 1.1rem; font-size: 0.875rem; font-weight: 600;
+  cursor: pointer; margin-left: 0.5rem; transition: background 0.2s, transform 0.15s;
+  text-decoration: none;
+}
+.ab-nav-btn:hover { background: linear-gradient(135deg, #3182ce, #4299e1); transform: translateY(-1px); }
+.ab-hero {
+  text-align: center; padding: 4rem 2rem 3rem;
+  background: linear-gradient(180deg, rgba(49,130,206,0.06) 0%, transparent 100%);
+  border-bottom: 1px solid rgba(99,179,237,0.08);
+}
+.ab-hero-badge {
+  display: inline-block; background: rgba(99,179,237,0.1);
+  border: 1px solid rgba(99,179,237,0.25); color: #63b3ed; font-size: 0.75rem;
+  font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 0.3rem 1rem; border-radius: 999px; margin-bottom: 1.25rem;
+}
+.ab-hero-title {
+  font-size: clamp(1.8rem, 4vw, 2.6rem); font-weight: 800; color: #e8eaf0;
+  margin: 0 0 0.9rem; letter-spacing: -0.02em;
+}
+.ab-hero-sub {
+  color: #718096; font-size: 1.05rem; max-width: 560px; margin: 0 auto; line-height: 1.7;
+}
+.ab-main { flex: 1; padding: 3rem 1.5rem 4rem; }
+.ab-container {
+  max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem;
+}
+.ab-section-card {
+  background: #111827; border: 1px solid rgba(99,179,237,0.1); border-radius: 16px;
+  padding: 1.75rem 2rem; display: flex; gap: 1.5rem; transition: border-color 0.2s;
+  text-align: center;
+}
+.ab-section-card:hover { border-color: rgba(99,179,237,0.22); }
+.ab-section-body { flex: 1; }
+.ab-section-title { font-size: 1.1rem; font-weight: 700; color: #e8eaf0; margin: 0 0 0.85rem; }
+.ab-section-content p { color: #9aa5b4; line-height: 1.75; margin: 0 0 0.65rem; font-size: 0.925rem; }
+.ab-section-content ul {
+  margin: 0.4rem auto 0.65rem auto; padding: 0; list-style-position: inside;
+  color: #9aa5b4; font-size: 0.925rem; line-height: 1.8; text-align: left; display: inline-block;
+}
+.ab-section-content em { color: #63b3ed; font-style: normal; }
+.ab-section-content strong { color: #e2e8f0; }
+.ab-equation-box {
+  background: rgba(49,130,206,0.07); border: 1px solid rgba(99,179,237,0.2);
+  border-left: 3px solid #3182ce; border-radius: 8px; padding: 0.9rem 1.25rem; margin: 0.75rem 0;
+}
+.ab-eq {
+  font-family: 'Georgia', 'Times New Roman', serif; font-size: 1.05rem;
+  color: #90cdf4; letter-spacing: 0.03em; display: block;
+}
+.ab-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin: 0.5rem 0 0.65rem; }
+.ab-legend div { font-size: 0.86rem; color: #718096; }
+.ab-sym { color: #63b3ed; font-family: 'Georgia', serif; margin-right: 0.25rem; }
+.ab-pore-grid { display: flex; gap: 0.75rem; margin: 0.75rem 0; flex-wrap: wrap; }
+.ab-pore-card {
+  display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 220px;
+  padding: 0.75rem 1rem; border-radius: 10px; font-size: 0.875rem; color: #9aa5b4;
+}
+.ab-pore-short { background: rgba(252,129,74,0.08); border: 1px solid rgba(252,129,74,0.2); }
+.ab-pore-long  { background: rgba(72,187,120,0.08); border: 1px solid rgba(72,187,120,0.2); }
+.ab-pore-label { font-weight: 700; color: #e2e8f0; }
+.ab-pore-arrow { color: #4a5568; }
+.ab-pore-tag { font-weight: 600; padding: 0.15rem 0.6rem; border-radius: 999px; font-size: 0.8rem; }
+.ab-bound { background: rgba(252,129,74,0.15); color: #fc814a; }
+.ab-free  { background: rgba(72,187,120,0.15); color: #48bb78; }
+.ab-cutoff-grid { display: flex; gap: 0.75rem; margin: 0.75rem 0; flex-wrap: wrap; }
+.ab-cutoff-card {
+  flex: 1; min-width: 190px; background: #0d1424;
+  border: 1px solid rgba(99,179,237,0.1); border-radius: 10px; padding: 1rem 1.1rem;
+}
+.ab-cutoff-cond { font-family: 'Georgia', serif; font-size: 0.95rem; color: #90cdf4; margin-bottom: 0.4rem; }
+.ab-cutoff-name { font-weight: 700; font-size: 0.9rem; margin-bottom: 0.3rem; }
+.ab-bound-color { color: #fc814a; }
+.ab-free-color  { color: #48bb78; }
+.ab-cutoff-desc { font-size: 0.82rem; color: #4a5568; }
+.ab-interp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin: 0.75rem 0; }
+.ab-interp-item {
+  display: flex; align-items: flex-start; gap: 0.65rem; background: #0d1424;
+  border: 1px solid rgba(99,179,237,0.08); border-radius: 8px;
+  padding: 0.7rem 0.85rem; font-size: 0.875rem; color: #9aa5b4;
+}
+.ab-interp-icon {
+  width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center;
+  justify-content: center; font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+}
+.ab-good { background: rgba(72,187,120,0.15); color: #48bb78; }
+.ab-warn { background: rgba(252,129,74,0.15); color: #fc814a; }
+.ab-key-insight {
+  display: flex; gap: 1.25rem; align-items: flex-start;
+  background: linear-gradient(135deg, rgba(49,130,206,0.12), rgba(99,179,237,0.06));
+  border: 1px solid rgba(99,179,237,0.3); border-radius: 16px; padding: 1.75rem 2rem;
+}
+.ab-insight-icon { font-size: 1.8rem; flex-shrink: 0; margin-top: 0.1rem; }
+.ab-insight-label {
+  font-size: 0.8rem; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: #63b3ed; margin-bottom: 0.5rem;
+}
+.ab-insight-text { color: #c9d1e0; font-size: 1rem; line-height: 1.75; margin: 0; }
+.ab-footer {
+  border-top: 1px solid rgba(99,179,237,0.08); padding: 1.5rem 2.5rem;
+  text-align: center; font-size: 0.8rem; color: #4a5568;
+}
+.ab-footer-credit { margin-top: 0.4rem; font-size: 0.75rem; color: #2d3748; }
+@media (max-width: 600px) {
+  .ab-section-card { padding: 1.25rem; gap: 1rem; }
+  .ab-interp-grid { grid-template-columns: 1fr; }
+  .ab-nav { padding: 0 1rem; }
+}
+  </style>
+</head>
+<body>
+<div class="ab-root">
+  <nav class="ab-nav">
+    <a class="ab-nav-logo" href="index.html">NMR Analyzer</a>
+    <div class="ab-nav-links">
+      <a class="ab-nav-link" href="index.html">Home</a>
+      <a class="ab-nav-link ab-nav-active" href="about.html">About NMR</a>
+      <a class="ab-nav-btn" href="analysis.html">Start Analysis</a>
+    </div>
+  </nav>
+
+  <header class="ab-hero">
+    <div class="ab-hero-badge">Theory &amp; Principles</div>
+    <h1 class="ab-hero-title">About NMR Well Logging</h1>
+    <p class="ab-hero-sub">A concise guide to the physics, equations, and interpretation behind NMR log analysis.</p>
+  </header>
+
+  <main class="ab-main">
+    <div class="ab-container">
+
+      <div class="ab-section-card"><div class="ab-section-body">
+        <h2 class="ab-section-title">What is NMR?</h2>
+        <div class="ab-section-content">
+          <p>Nuclear Magnetic Resonance (NMR) is a technique used to analyze fluids within porous rocks by measuring the response of hydrogen nuclei in a magnetic field.</p>
+          <p>Since hydrogen is present in both oil and water, NMR provides direct information about fluid distribution inside the reservoir.</p>
+        </div>
+      </div></div>
+
+      <div class="ab-section-card"><div class="ab-section-body">
+        <h2 class="ab-section-title">Working Principle</h2>
+        <div class="ab-section-content">
+          <p>When a magnetic field is applied, hydrogen nuclei align with the field.</p>
+          <ul>
+            <li>A radio frequency (RF) pulse is applied, causing the nuclei to become excited.</li>
+            <li>When the pulse is removed, the nuclei return to equilibrium and emit signals.</li>
+            <li>These signals are analyzed to determine fluid properties.</li>
+          </ul>
+        </div>
+      </div></div>
+
+      <div class="ab-section-card"><div class="ab-section-body">
+        <h2 class="ab-section-title">T&#x2082; Relaxation &amp; Pore Size</h2>
+        <div class="ab-section-content">
+          <p>The T&#x2082; relaxation time represents how quickly the signal decays. It is strongly related to pore size:</p>
+          <div class="ab-pore-grid">
+            <div class="ab-pore-card ab-pore-short">
+              <span class="ab-pore-label">Short T&#x2082;</span><span class="ab-pore-arrow">&rarr;</span>
+              <span>Small pores</span><span class="ab-pore-arrow">&rarr;</span>
+              <span class="ab-pore-tag ab-bound">Bound Fluids</span>
+            </div>
+            <div class="ab-pore-card ab-pore-long">
+              <span class="ab-pore-label">Long T&#x2082;</span><span class="ab-pore-arrow">&rarr;</span>
+              <span>Large pores</span><span class="ab-pore-arrow">&rarr;</span>
+              <span class="ab-pore-tag ab-free">Movable Fluids</span>
+            </div>
+          </div>
+          <p>This relationship allows NMR to characterize pore structure.</p>
+        </div>
+      </div></div>
+
+      <div class="ab-section-card"><div class="ab-section-body">
+        <h2 class="ab-section-title">T&#x2082; Distribution</h2>
+        <div class="ab-section-content">
+          <p>The NMR measurement produces a T&#x2082; distribution curve. Each point on the curve has an amplitude <em>A&#x1d62;</em>, which represents the volume of fluid in a specific pore size range.</p>
+          <p>The total area under the curve represents the total fluid content in the rock.</p>
+        </div>
+      </div></div>
+
+      <div class="ab-section-card"><div class="ab-section-body">
+        <h2 class="ab-section-title">Porosity Equation</h2>
+        <div class="ab-section-content">
+          <p>Porosity is computed directly from the NMR signal amplitudes:</p>
+          <div class="ab-equation-box"><span class="ab-eq">&#x3c6; = C &middot; &Sigma; A&#x1d62;</span></div>
+          <div class="ab-legend">
+            <div><span class="ab-sym">&#x3c6;</span> = Porosity</div>
+            <div><span class="ab-sym">A&#x1d62;</span> = Signal amplitude</div>
+            <div><span class="ab-sym">C</span> = Calibration constant</div>
+          </div>
+          <p>Porosity is directly proportional to the NMR signal.</p>
+        </div>
+      </div></div>
+
+      <div class="ab-section-card"><div class="ab-section-body">
+        <h2 class="ab-section-title">Bound vs Free Fluid</h2>
+        <div class="ab-section-content">
+          <p>A cutoff time (typically <strong>33 ms</strong>) is used to separate fluids:</p>
+          <div class="ab-cutoff-grid">
+            <div class="ab-cutoff-card">
+              <div class="ab-cutoff-cond">T&#x2082; &lt; T<sub>cutoff</sub></div>
+              <div class="ab-cutoff-name ab-bound-color">Bound Fluid Volume (BFV)</div>
+              <div class="ab-cutoff-desc">Trapped in small pores &mdash; immovable</div>
+            </div>
+            <div class="ab-cutoff-card">
+              <div class="ab-cutoff-cond">T&#x2082; &gt; T<sub>cutoff</sub></div>
+              <div class="ab-cutoff-name ab-free-color">Free Fluid Index (FFI)</div>
+              <div class="ab-cutoff-desc">In large pores &mdash; can flow</div>
+            </div>
+          </div>
+        </div>
+      </div></div>
+
+      <div class="ab-section-card"><div class="ab-section-body">
+        <h2 class="ab-section-title">FFI &amp; BFV Equations</h2>
+        <div class="ab-section-content">
+          <p>The total porosity is partitioned into movable and immobile fluid components:</p>
+          <div class="ab-equation-box">
+            <div class="ab-eq">FFI = &#x3c6; &times; ( &Sigma; A&#x1d62; [T&#x2082; &gt; T<sub>cutoff</sub>] / &Sigma; A&#x1d62; )</div>
+          </div>
+          <div class="ab-equation-box" style="margin-top:0.75rem">
+            <div class="ab-eq">BFV = &#x3c6; &times; ( &Sigma; A&#x1d62; [T&#x2082; &lt; T<sub>cutoff</sub>] / &Sigma; A&#x1d62; )</div>
+          </div>
+        </div>
+      </div></div>
+
+      <div class="ab-section-card"><div class="ab-section-body">
+        <h2 class="ab-section-title">Permeability &mdash; SDR Model</h2>
+        <div class="ab-section-content">
+          <p>Permeability is estimated using the Schlumberger-Doll Research (SDR) model:</p>
+          <div class="ab-equation-box"><span class="ab-eq">k = 4 &middot; &#x3c6;&#x2074; &middot; T&#x2082;<sub>LM</sub>&#xb2;</span></div>
+          <div class="ab-legend">
+            <div><span class="ab-sym">k</span> = Permeability (mD)</div>
+            <div><span class="ab-sym">T&#x2082;<sub>LM</sub></span> = Logarithmic mean of T&#x2082;</div>
+            <div><span class="ab-sym">&#x3c6;</span> = Porosity</div>
+          </div>
+          <p>Higher T&#x2082; and porosity values indicate better permeability.</p>
+        </div>
+      </div></div>
+
+      <div class="ab-section-card"><div class="ab-section-body">
+        <h2 class="ab-section-title">Interpretation of Results</h2>
+        <div class="ab-section-content">
+          <p>NMR results help evaluate reservoir quality:</p>
+          <div class="ab-interp-grid">
+            <div class="ab-interp-item"><span class="ab-interp-icon ab-good">&#x2191;</span><div><strong>High FFI</strong> &mdash; good production potential</div></div>
+            <div class="ab-interp-item"><span class="ab-interp-icon ab-warn">&#x2191;</span><div><strong>High BFV</strong> &mdash; more trapped fluids</div></div>
+            <div class="ab-interp-item"><span class="ab-interp-icon ab-good">&#x2191;</span><div><strong>Long T&#x2082;</strong> &mdash; larger pores, better flow</div></div>
+            <div class="ab-interp-item"><span class="ab-interp-icon ab-good">&#x2191;</span><div><strong>High k</strong> &mdash; higher permeability</div></div>
+          </div>
+          <p>These parameters guide reservoir engineering decisions.</p>
+        </div>
+      </div></div>
+
+      <div class="ab-key-insight">
+        <div class="ab-insight-icon">&#x1f4a1;</div>
+        <div>
+          <div class="ab-insight-label">Key Insight</div>
+          <p class="ab-insight-text">NMR directly measures fluids in the pore space, making it one of the most reliable tools for reservoir evaluation.</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="ab-footer">
+    <div style="max-width:860px;margin:0 auto">
+      <span>NMR Well Log Analyzer</span>
+      <div class="ab-footer-credit">Department of Chemical and Petroleum Engineering &mdash; Sultan Qaboos University</div>
+    </div>
+  </footer>
+</div>
+</body>
+</html>
