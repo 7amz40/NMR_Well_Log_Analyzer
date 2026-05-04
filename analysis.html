@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Analysis &mdash; NMR Well Log Analyzer</title>
+  <style>
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; }
+.ap-root {
+  min-height: 100vh; background: #0a0e1a; color: #e8eaf0;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  display: flex; flex-direction: column;
+}
+.ap-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 2rem; height: 60px; background: rgba(10,14,26,0.95);
+  border-bottom: 1px solid rgba(99,179,237,0.15);
+  position: sticky; top: 0; z-index: 100; backdrop-filter: blur(12px);
+}
+.ap-back-btn {
+  background: transparent; border: 1px solid rgba(99,179,237,0.25); color: #63b3ed;
+  border-radius: 6px; padding: 0.4rem 1rem; font-size: 0.875rem; cursor: pointer;
+  transition: background 0.2s, border-color 0.2s; text-decoration: none;
+}
+.ap-back-btn:hover { background: rgba(99,179,237,0.08); border-color: rgba(99,179,237,0.5); }
+.ap-nav-title { font-size: 1rem; font-weight: 700; color: #e8eaf0; letter-spacing: 0.01em; }
+.ap-nav-right { font-size: 0.8rem; color: #4a5568; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.ap-body { display: flex; flex: 1; min-height: 0; }
+.ap-sidebar {
+  width: 280px; flex-shrink: 0; background: #0d1220;
+  border-right: 1px solid rgba(99,179,237,0.1);
+  padding: 1.5rem 1.25rem; display: flex; flex-direction: column; gap: 1.75rem; overflow-y: auto;
+}
+.ap-sample-btn {
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem; width: 100%;
+  padding: 0.55rem 1rem; background: rgba(99,179,237,0.07);
+  border: 1px dashed rgba(99,179,237,0.35); border-radius: 8px; color: #63b3ed;
+  font-size: 0.82rem; font-weight: 600; text-decoration: none; cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.ap-sample-btn:hover { background: rgba(99,179,237,0.13); border-color: rgba(99,179,237,0.6); }
+.ap-sidebar-label {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.14em;
+  text-transform: uppercase; color: #3182ce; margin-bottom: 0.85rem;
+}
+.ap-dropzone {
+  border: 2px dashed rgba(99,179,237,0.25); border-radius: 12px; padding: 1.75rem 1rem;
+  text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+  background: rgba(49,130,206,0.04);
+}
+.ap-dropzone:hover, .ap-dropzone--active {
+  border-color: rgba(99,179,237,0.6); background: rgba(49,130,206,0.1);
+}
+.ap-dropzone-icon { font-size: 1.75rem; margin-bottom: 0.5rem; }
+.ap-dropzone-text { font-size: 0.85rem; font-weight: 600; color: #a0aec0; word-break: break-all; }
+.ap-dropzone-sub { font-size: 0.75rem; color: #4a5568; margin-top: 0.3rem; }
+.ap-error {
+  margin-top: 0.6rem; background: rgba(245,101,101,0.1);
+  border: 1px solid rgba(245,101,101,0.3); border-radius: 8px;
+  padding: 0.6rem 0.85rem; font-size: 0.8rem; color: #fc8181;
+}
+.ap-format-hint {
+  margin-top: 0.85rem; background: rgba(99,179,237,0.06);
+  border: 1px solid rgba(99,179,237,0.12); border-radius: 8px; padding: 0.7rem 0.85rem;
+}
+.ap-hint-title {
+  font-size: 0.72rem; color: #718096; margin-bottom: 0.4rem; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.ap-hint-cols { display: flex; gap: 0.5rem; }
+.ap-hint-cols span {
+  background: rgba(49,130,206,0.15); color: #63b3ed; border-radius: 4px;
+  padding: 0.15rem 0.5rem; font-size: 0.78rem; font-weight: 600; font-family: monospace;
+}
+.ap-setting-label { display: flex; flex-direction: column; gap: 0.45rem; font-size: 0.83rem; color: #a0aec0; font-weight: 500; }
+.ap-setting-input {
+  background: #111827; border: 1px solid rgba(99,179,237,0.2); border-radius: 7px;
+  color: #e8eaf0; padding: 0.5rem 0.75rem; font-size: 0.9rem; width: 100%;
+  outline: none; transition: border-color 0.2s;
+}
+.ap-setting-input:focus { border-color: rgba(99,179,237,0.5); }
+.ap-setting-hint { font-size: 0.75rem; color: #4a5568; margin-top: 0.35rem; font-style: italic; }
+.ap-recalc-btn {
+  margin-top: 0.85rem; width: 100%; background: #2b6cb0; color: #fff; border: none;
+  border-radius: 8px; padding: 0.6rem; font-size: 0.875rem; font-weight: 600;
+  cursor: pointer; transition: background 0.2s;
+}
+.ap-recalc-btn:hover:not(:disabled) { background: #3182ce; }
+.ap-recalc-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.ap-summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.ap-summary-item {
+  background: #111827; border: 1px solid rgba(99,179,237,0.1);
+  border-radius: 10px; padding: 0.85rem 0.75rem; text-align: center;
+}
+.ap-summary-val { font-size: 1.1rem; font-weight: 700; color: #63b3ed; }
+.ap-summary-key { font-size: 0.72rem; color: #4a5568; margin-top: 0.2rem; font-weight: 600; }
+.ap-main { flex: 1; padding: 2rem 2rem 3rem; overflow-y: auto; min-width: 0; }
+.ap-empty {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 60vh; gap: 0.75rem; text-align: center;
+}
+.ap-empty-icon { font-size: 3rem; }
+.ap-empty-title { font-size: 1.4rem; font-weight: 700; color: #e8eaf0; }
+.ap-empty-sub { font-size: 0.95rem; color: #4a5568; }
+.ap-results-header { display: flex; align-items: baseline; gap: 1rem; margin-bottom: 1.75rem; }
+.ap-results-title { font-size: 1.5rem; font-weight: 700; color: #e8eaf0; margin: 0; }
+.ap-results-count { font-size: 0.8rem; color: #4a5568; font-weight: 600; }
+.ap-charts-grid { display: grid; grid-template-columns: 1fr; gap: 1.25rem; margin-bottom: 2.5rem; }
+.ap-charts-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+.ap-chart-card {
+  background: #111827; border: 1px solid rgba(99,179,237,0.1);
+  border-radius: 14px; padding: 1.5rem 1.25rem 1rem;
+}
+.ap-chart-card-header {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.75rem;
+}
+.ap-chart-dl-btn {
+  background: transparent; border: 1px solid rgba(99,179,237,0.2); border-radius: 6px;
+  color: #4a5568; padding: 0.3rem 0.35rem; cursor: pointer; display: flex;
+  align-items: center; justify-content: center;
+  transition: color 0.2s, border-color 0.2s, background 0.2s; flex-shrink: 0;
+}
+.ap-chart-dl-btn:hover { color: #63b3ed; border-color: rgba(99,179,237,0.5); background: rgba(99,179,237,0.07); }
+.ap-chart-title { font-size: 0.85rem; font-weight: 700; letter-spacing: 0.01em; }
+.ap-chart-canvas-wrap { position: relative; height: 550px; }
+.ap-table-section {
+  background: #111827; border: 1px solid rgba(99,179,237,0.1); border-radius: 14px; overflow: hidden;
+}
+.ap-table-header {
+  padding: 1.1rem 1.5rem; border-bottom: 1px solid rgba(99,179,237,0.08);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.ap-table-title { font-size: 1rem; font-weight: 700; color: #e8eaf0; margin: 0; }
+.ap-table-wrap { overflow-x: auto; max-height: 400px; overflow-y: auto; }
+.ap-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+.ap-table th {
+  padding: 0.7rem 1rem; text-align: right; font-weight: 700; color: #718096;
+  background: #0d1220; position: sticky; top: 0; font-size: 0.75rem;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.ap-table th:first-child { text-align: left; }
+.ap-table td {
+  padding: 0.55rem 1rem; text-align: right;
+  border-bottom: 1px solid rgba(99,179,237,0.05); color: #a0aec0;
+}
+.ap-table td:first-child { text-align: left; color: #63b3ed; font-weight: 600; }
+.ap-table tbody tr:hover td { background: rgba(49,130,206,0.06); }
+#summary-section { display: none; }
+#results-section { display: none; }
+  </style>
+</head>
+<body>
+<div class="ap-root">
+  <nav class="ap-nav">
+    <a class="ap-back-btn" href="index.html">&larr; Home</a>
+    <span class="ap-nav-title">NMR Well Log Analyzer</span>
+    <span class="ap-nav-right">Analysis</span>
+  </nav>
+
+  <div class="ap-body">
+    <aside class="ap-sidebar">
+      <div class="ap-sidebar-section">
+        <a class="ap-sample-btn" href="NMR_sample_data.xlsx" download="NMR_sample_data.xlsx">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          Download Sample Data
+        </a>
+        <div class="ap-sidebar-label" style="margin-top:1rem">Upload Data</div>
+        <div id="dropzone" class="ap-dropzone">
+          <div class="ap-dropzone-icon">&#x1f4c2;</div>
+          <div class="ap-dropzone-text" id="dropzone-text">Drop Excel / CSV file here</div>
+          <div class="ap-dropzone-sub">or click to browse</div>
+          <input id="file-input" type="file" accept=".xlsx,.xls,.csv" style="display:none" />
+        </div>
+        <div id="error-msg" class="ap-error" style="display:none"></div>
+        <div class="ap-format-hint">
+          <div class="ap-hint-title">Expected columns:</div>
+          <div class="ap-hint-cols"><span>Depth</span><span>T2</span><span>Amplitude</span></div>
+        </div>
+      </div>
+
+      <div class="ap-sidebar-section">
+        <div class="ap-sidebar-label">Settings</div>
+        <label class="ap-setting-label">
+          Calibration Factor (C)
+          <input class="ap-setting-input" id="calib-factor" type="number" value="0.8" step="0.01" min="0" />
+        </label>
+        <div class="ap-setting-hint">&#x3c6; = C &times; Amplitude</div>
+        <label class="ap-setting-label" style="margin-top:0.85rem">
+          T&#x2082; Cutoff (ms)
+          <input class="ap-setting-input" id="t2-cutoff" type="number" value="33" min="1" max="1000" />
+        </label>
+        <button class="ap-recalc-btn" id="recalc-btn" disabled>Recalculate</button>
+      </div>
+
+      <div class="ap-sidebar-section" id="summary-section">
+        <div class="ap-sidebar-label">Summary</div>
+        <div class="ap-summary-grid">
+          <div class="ap-summary-item"><div class="ap-summary-val" id="sum-rows">—</div><div class="ap-summary-key">Rows</div></div>
+          <div class="ap-summary-item"><div class="ap-summary-val" id="sum-phi">—</div><div class="ap-summary-key">Avg &#x3c6;</div></div>
+          <div class="ap-summary-item"><div class="ap-summary-val" id="sum-ffi">—</div><div class="ap-summary-key">Avg FFI</div></div>
+          <div class="ap-summary-item"><div class="ap-summary-val" id="sum-bfv">—</div><div class="ap-summary-key">Avg BFV</div></div>
+          <div class="ap-summary-item"><div class="ap-summary-val" id="sum-k">—</div><div class="ap-summary-key">Avg k</div></div>
+          <div class="ap-summary-item"><div class="ap-summary-val" id="sum-rqi">—</div><div class="ap-summary-key">Avg RQI</div></div>
+        </div>
+      </div>
+    </aside>
+
+    <main class="ap-main">
+      <div id="empty-state" class="ap-empty">
+        <div class="ap-empty-icon">&#x1faa8;</div>
+        <div class="ap-empty-title">No data loaded</div>
+        <div class="ap-empty-sub">Upload an Excel or CSV file to begin analysis</div>
+      </div>
+
+      <div id="results-section">
+        <div class="ap-results-header">
+          <h2 class="ap-results-title">Reservoir Property Logs</h2>
+          <span class="ap-results-count" id="results-count"></span>
+        </div>
+        <div class="ap-charts-grid">
+          <div class="ap-charts-pair">
+            <div class="ap-chart-card" id="card-phi">
+              <div class="ap-chart-card-header">
+                <div class="ap-chart-title" style="color:#63b3ed">Porosity (&#x3c6;)</div>
+                <button class="ap-chart-dl-btn" id="dl-btn-phi" title="Download chart"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+              </div>
+              <div class="ap-chart-canvas-wrap"><canvas id="chart-phi"></canvas></div>
+            </div>
+            <div class="ap-chart-card" id="card-k">
+              <div class="ap-chart-card-header">
+                <div class="ap-chart-title" style="color:#fc8181">Permeability (k)</div>
+                <button class="ap-chart-dl-btn" id="dl-btn-k" title="Download chart"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+              </div>
+              <div class="ap-chart-canvas-wrap"><canvas id="chart-k"></canvas></div>
+            </div>
+          </div>
+          <div class="ap-charts-pair">
+            <div class="ap-chart-card" id="card-ffi">
+              <div class="ap-chart-card-header">
+                <div class="ap-chart-title" style="color:#68d391">Free Fluid Index (FFI)</div>
+                <button class="ap-chart-dl-btn" id="dl-btn-ffi" title="Download chart"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+              </div>
+              <div class="ap-chart-canvas-wrap"><canvas id="chart-ffi"></canvas></div>
+            </div>
+            <div class="ap-chart-card" id="card-bfv">
+              <div class="ap-chart-card-header">
+                <div class="ap-chart-title" style="color:#f6ad55">Bound Fluid Volume (BFV)</div>
+                <button class="ap-chart-dl-btn" id="dl-btn-bfv" title="Download chart"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+              </div>
+              <div class="ap-chart-canvas-wrap"><canvas id="chart-bfv"></canvas></div>
+            </div>
+          </div>
+          <div class="ap-charts-pair">
+            <div class="ap-chart-card" id="card-rqi">
+              <div class="ap-chart-card-header">
+                <div class="ap-chart-title" style="color:#b794f4">Reservoir Quality Index (RQI)</div>
+                <button class="ap-chart-dl-btn" id="dl-btn-rqi" title="Download chart"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+              </div>
+              <div class="ap-chart-canvas-wrap"><canvas id="chart-rqi"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ap-table-section">
+          <div class="ap-table-header">
+            <h3 class="ap-table-title">Results Table</h3>
+            <button class="ap-chart-dl-btn" id="download-excel-btn" title="Download Results as Excel"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg></button>
+          </div>
+          <div class="ap-table-wrap">
+            <table class="ap-table">
+              <thead><tr><th>Depth (m)</th><th>Porosity &#x3c6;</th><th>FFI (%)</th><th>BFV (%)</th><th>k (mD)</th><th>RQI</th></tr></thead>
+              <tbody id="results-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+const CHART_CONFIGS = [
+  { key: 'phi',  label: 'Porosity (\u03c6)',                color: '#63b3ed', unit: 'fraction' },
+  { key: 'ffi',  label: 'Free Fluid Index (FFI)',       color: '#68d391', unit: '%' },
+  { key: 'bfv',  label: 'Bound Fluid Volume (BFV)',     color: '#f6ad55', unit: '%' },
+  { key: 'k',    label: 'Permeability (k)',              color: '#fc8181', unit: 'mD' },
+  { key: 'rqi',  label: 'Reservoir Quality Index (RQI)', color: '#b794f4', unit: '' },
+]
+let rawRows = null, results = null
+const charts = {}
+
+function processNMR(rawRows, t2Cutoff, calibrationFactor) {
+  const depthMap = new Map()
+  for (const r of rawRows) {
+    if (!depthMap.has(r.Depth)) depthMap.set(r.Depth, [])
+    depthMap.get(r.Depth).push(r)
+  }
+  return Array.from(depthMap.entries()).map(([depth, bins]) => {
+    const sumAmp = bins.reduce((s, b) => s + (b.Amplitude || 0), 0)
+    const sumAmpFree = bins.filter(b => b.T2 > t2Cutoff).reduce((s, b) => s + (b.Amplitude || 0), 0)
+    const phi = calibrationFactor * sumAmp
+    const ffiAbs = calibrationFactor * sumAmpFree
+    const bvAbs = phi - ffiAbs
+    const ffi = phi > 0 ? (ffiAbs / phi) * 100 : 0
+    const bfv = phi > 0 ? (bvAbs / phi) * 100 : 0
+    const sumAmpLogT2 = bins.reduce((s, b) => s + (b.Amplitude || 0) * Math.log(b.T2 > 0 ? b.T2 : 1), 0)
+    const t2LogMean = sumAmp > 0 ? Math.exp(sumAmpLogT2 / sumAmp) : 0
+    const k = 4 * Math.pow(t2LogMean, 2) * Math.pow(phi, 4)
+    const rqi = phi > 0 ? Math.sqrt(k / phi) : 0
+    return { depth, T2: +t2LogMean.toFixed(4), Amplitude: +sumAmp.toFixed(4),
+             phi: +phi.toFixed(4), ffi: +ffi.toFixed(4), bfv: +bfv.toFixed(4),
+             k: +k.toFixed(4), rqi: +rqi.toFixed(4) }
+  })
+}
+
+function parseFile(file) {
+  setError('')
+  document.getElementById('dropzone-text').textContent = file.name
+  const reader = new FileReader()
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' })
+      const ws = wb.Sheets[wb.SheetNames[0]]
+      const json = XLSX.utils.sheet_to_json(ws, { defval: '' })
+      if (!json.length) { setError('The file is empty.'); return }
+      const keys = Object.keys(json[0])
+      const depthKey = keys.find(k => /depth/i.test(k))
+      const t2Key = keys.find(k => /t2/i.test(k))
+      const ampKey = keys.find(k => /amp/i.test(k))
+      if (!depthKey || !t2Key) { setError('Could not find "Depth" and "T2" columns.'); return }
+      const parsed = json.map(r => ({
+        Depth: parseFloat(r[depthKey]), T2: parseFloat(r[t2Key]),
+        Amplitude: ampKey ? parseFloat(r[ampKey]) : NaN,
+      })).filter(r => !isNaN(r.Depth) && !isNaN(r.T2))
+      if (!parsed.length) { setError('No valid numeric rows found.'); return }
+      rawRows = parsed
+      results = processNMR(rawRows,
+        parseFloat(document.getElementById('t2-cutoff').value),
+        parseFloat(document.getElementById('calib-factor').value))
+      renderResults()
+    } catch { setError('Failed to parse file. Make sure it is a valid Excel or CSV file.') }
+  }
+  reader.readAsArrayBuffer(file)
+}
+
+function setError(msg) {
+  const el = document.getElementById('error-msg')
+  el.textContent = msg; el.style.display = msg ? 'block' : 'none'
+}
+
+function recalculate() {
+  if (!rawRows) return
+  results = processNMR(rawRows,
+    parseFloat(document.getElementById('t2-cutoff').value),
+    parseFloat(document.getElementById('calib-factor').value))
+  renderResults()
+}
+
+function renderResults() {
+  if (!results) return
+  const chartData = [...results].sort((a, b) => a.depth - b.depth)
+  document.getElementById('empty-state').style.display = 'none'
+  document.getElementById('results-section').style.display = 'block'
+  document.getElementById('summary-section').style.display = 'block'
+  document.getElementById('recalc-btn').disabled = false
+  document.getElementById('results-count').textContent = results.length + ' depth points'
+  const n = chartData.length
+  const avg = key => chartData.reduce((s, r) => s + r[key], 0) / n
+  document.getElementById('sum-rows').textContent = n
+  document.getElementById('sum-phi').textContent = avg('phi').toFixed(3)
+  document.getElementById('sum-ffi').textContent = avg('ffi').toFixed(2) + '%'
+  document.getElementById('sum-bfv').textContent = avg('bfv').toFixed(2) + '%'
+  document.getElementById('sum-k').textContent = avg('k').toFixed(2)
+  document.getElementById('sum-rqi').textContent = avg('rqi').toFixed(3)
+  const depths = chartData.map(r => r.depth)
+  CHART_CONFIGS.forEach(cfg => {
+    const values = chartData.map(r => r[cfg.key])
+    if (charts[cfg.key]) charts[cfg.key].destroy()
+    charts[cfg.key] = new Chart(document.getElementById('chart-' + cfg.key), {
+      type: 'line',
+      data: { labels: depths, datasets: [{ data: values, borderColor: cfg.color, borderWidth: 2, pointRadius: 0, tension: 0.1 }] },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false, animation: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#111827', borderColor: 'rgba(99,179,237,0.2)', borderWidth: 1,
+            callbacks: {
+              title: items => 'Depth: ' + items[0].label + ' m',
+              label: item => cfg.label + ': ' + (+item.raw).toFixed(4)
+            }
+          }
+        },
+        scales: {
+          y: { reverse: false, title: { display: true, text: 'Depth (m)', color: '#718096', font: { size: 11 } }, ticks: { color: '#718096', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.06)' } },
+          x: { position: 'top', title: { display: true, text: cfg.unit, color: '#718096', font: { size: 11 } }, ticks: { color: '#718096', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.06)' } }
+        }
+      }
+    })
+  })
+  const tbody = document.getElementById('results-tbody')
+  tbody.innerHTML = ''
+  chartData.forEach(r => {
+    const tr = document.createElement('tr')
+    tr.innerHTML = '<td>'+r.depth+'</td><td>'+r.phi+'</td><td>'+r.ffi+'</td><td>'+r.bfv+'</td><td>'+r.k+'</td><td>'+r.rqi+'</td>'
+    tbody.appendChild(tr)
+  })
+}
+
+function downloadChart(key) {
+  html2canvas(document.getElementById('card-' + key), { backgroundColor: '#111827', scale: 2 }).then(canvas => {
+    const a = document.createElement('a'); a.download = 'nmr_' + key + '.png'
+    a.href = canvas.toDataURL('image/png'); a.click()
+  })
+}
+
+function downloadExcel() {
+  if (!results) return
+  const chartData = [...results].sort((a, b) => a.depth - b.depth)
+  const exportData = chartData.map(r => ({
+    'Depth (m)': r.depth, 'Porosity \u03c6': r.phi, 'FFI (%)': r.ffi,
+    'BFV (%)': r.bfv, 'Permeability k (mD)': r.k, 'RQI': r.rqi
+  }))
+  const ws = XLSX.utils.json_to_sheet(exportData)
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, 'NMR Results')
+  XLSX.writeFile(wb, 'nmr_results.xlsx')
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const dropzone = document.getElementById('dropzone')
+  const fileInput = document.getElementById('file-input')
+  dropzone.addEventListener('click', () => fileInput.click())
+  dropzone.addEventListener('dragenter', e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.add('ap-dropzone--active') })
+  dropzone.addEventListener('dragover', e => { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = 'copy'; dropzone.classList.add('ap-dropzone--active') })
+  dropzone.addEventListener('dragleave', e => { e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('ap-dropzone--active') })
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault(); e.stopPropagation(); dropzone.classList.remove('ap-dropzone--active')
+    const files = e.dataTransfer.files || (e.dataTransfer.items && Array.from(e.dataTransfer.items).map(i => i.getAsFile()).filter(Boolean))
+    const file = files?.[0]; if (file) parseFile(file)
+  })
+  fileInput.addEventListener('change', e => { const file = e.target.files?.[0]; if (file) parseFile(file) })
+  document.getElementById('recalc-btn').addEventListener('click', recalculate)
+  document.getElementById('download-excel-btn').addEventListener('click', downloadExcel)
+  CHART_CONFIGS.forEach(cfg => {
+    const btn = document.getElementById('dl-btn-' + cfg.key)
+    if (btn) btn.addEventListener('click', () => downloadChart(cfg.key))
+  })
+})
+</script>
+</body>
+</html>
